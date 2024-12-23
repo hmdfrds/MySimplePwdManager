@@ -22,7 +22,7 @@ def initialize_parser():
 def store(service, username, password):
     try:
         credentials = {
-            service.lower(): {
+            service: {
                 "username": username,
                 "password": password,
             }
@@ -37,16 +37,28 @@ def store(service, username, password):
 def get(service):
     try:
         key = load_key()
-        credentials = load_encrypted_json(key)
-        print(credentials[service.lower()])
+        credential = load_encrypted_json(key)[service.casefold()]
+        print(service)
+        print(f"Username:    {credential['username']}")
+        print(f"Password:    {credential['password']}")
     except InvalidToken as e:
-        print(f"Error while gettign credential: {e}")
+        print(f"Error while getting credential: {e}")
     except Exception as e:
         print(f"Error while getting credential: {e}")
 
 
 def list():
-    pass
+    try:
+        key = load_key()
+        credentials = load_encrypted_json(key)
+        for service, credential in credentials.items():
+            print(service)
+            print(f"Username:    {credential['username']}")
+            print(f"Password:    {credential['password']}")
+    except InvalidToken as e:
+        print(f"Error while getting credential: {e}")
+    except Exception as e:
+        print(f"Error while getting credential: {e}")
 
 
 def main():
