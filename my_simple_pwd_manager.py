@@ -1,7 +1,7 @@
 import argparse
 import json
-from utils import save_encrypted_json, create_or_load_key, load_key, load_encrypted_json
-from cryptography.fernet import InvalidToken
+from constants import CredentialKeys
+from password_manager import PasswordManager
 
 
 def initialize_parser():
@@ -15,50 +15,10 @@ def initialize_parser():
     )
     parser.add_argument("username", nargs="?", help="Username for storing credentials.")
     parser.add_argument("password", nargs="?", help="Password for storing credentials.")
-
+    parser.add_argument(
+        "-s", "--showpassword", action="store_true", help="Enable to show password."
+    )
     return parser
-
-
-def store(service, username, password):
-    try:
-        credentials = {
-            service: {
-                "username": username,
-                "password": password,
-            }
-        }
-        key = create_or_load_key()
-        save_encrypted_json(credentials, key)
-
-    except Exception as e:
-        print(f"Error while storing credential: {e}")
-
-
-def get(service):
-    try:
-        key = load_key()
-        credential = load_encrypted_json(key)[service.casefold()]
-        print(service)
-        print(f"Username:    {credential['username']}")
-        print(f"Password:    {credential['password']}")
-    except InvalidToken as e:
-        print(f"Error while getting credential: {e}")
-    except Exception as e:
-        print(f"Error while getting credential: {e}")
-
-
-def list():
-    try:
-        key = load_key()
-        credentials = load_encrypted_json(key)
-        for service, credential in credentials.items():
-            print(service)
-            print(f"Username:    {credential['username']}")
-            print(f"Password:    {credential['password']}")
-    except InvalidToken as e:
-        print(f"Error while getting credential: {e}")
-    except Exception as e:
-        print(f"Error while getting credential: {e}")
 
 
 def main():
@@ -66,12 +26,26 @@ def main():
 
     args = parser.parse_args()
 
+    pm = PasswordManager()
     if args.command == "store":
-        store(args.service, args.username, args.password)
+        pm.store(args.service, args.username, args.password)
+
     elif args.command == "get":
-        get(args.service)
+        credential = pm.get(args.service)
+        print(f"Username:    {credential[CredentialKeys.USERNAME]}")
+        if args.showpassword:
+            print(f"Password:    {credential[CredentialKeys.PASSWORD]}")
+        else:
+            print(f"Password:    ********")
     elif args.command == "list":
-        list()
+        credentials = pm.list()
+        for service, credential in credentials.items():
+            print(service)
+            print(f"Username:    {credential[CredentialKeys.USERNAME]}")
+        if args.s:
+            print(f"Password:    {credential[CredentialKeys.PASSWORD]}")
+        else:
+            print(f"Password:    ********")
 
 
 if __name__ == "__main__":
